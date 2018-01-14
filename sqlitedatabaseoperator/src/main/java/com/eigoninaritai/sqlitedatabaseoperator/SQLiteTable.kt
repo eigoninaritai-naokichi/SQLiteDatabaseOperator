@@ -115,7 +115,7 @@ internal object SQLiteAnnotationOperator {
                 }
                 val columnLength = column.length
                 val isAutoIncrement = column.isAutoIncrement
-                val defaultValue = if (column.defaultValue == "") null else column.defaultValue
+                val defaultValue = if (column.defaultValue == "") null else if (columnType == SQLiteType.TEXT) "'${column.defaultValue}'" else column.defaultValue
                 val isNotNull: Boolean = !columnAnnotationProperty.returnType.isMarkedNullable
                 var foreignKeyDefine: ForeignKeyDefine? = null
                 foreignKeyAnnotationProperties.forEach { foreignKeyAnnotationProperty ->
