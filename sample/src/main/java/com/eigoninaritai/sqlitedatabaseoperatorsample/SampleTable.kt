@@ -8,6 +8,12 @@ import com.eigoninaritai.sqlitedatabaseoperator.Unique
 
 /**
  * SQLiteDatabaseOperatorのサンプルテーブル。
+ *
+ * @param id プライマリキーになるカラム。
+ * @param nullableInt Nullが可能なINTEGER型のカラム。
+ * @param limitedLengthString 文字数制限されたカラム。
+ * @param intWithDefault デフォルト値が設定されたINTEGER型のカラム。
+ * @param stringWithDefault デフォルト値が設定されたTEXT型のカラム。
  */
 @Table("sample_table")
 @PrimaryKey("_id")
@@ -19,12 +25,18 @@ data class SampleTable(
     val nullableInt: Int?,
     @Column(name = "limited_length_string", length = 256)
     val limitedLengthString: String,
+    @Column(name = "int_with_default", defaultValue = "12345")
+    val intWithDefault: Int,
     @Column(name = "string_with_default", defaultValue = "Default Value")
     val stringWithDefault: String
 ) : SQLiteTableBase()
 
 /**
+ * SQLiteDatabaseOperatorのサンプルテーブル2。
  *
+ * @param id プライマリキーになるカラム。
+ * @param primaryKeyString プライマリキーになるカラム。
+ * @param foreignReferenceColumn sample_table.limited_length_stringを外部キーとして参照しているカラム。
  */
 @Table("sample_table2")
 @PrimaryKey("_id", "primary_key_string")
