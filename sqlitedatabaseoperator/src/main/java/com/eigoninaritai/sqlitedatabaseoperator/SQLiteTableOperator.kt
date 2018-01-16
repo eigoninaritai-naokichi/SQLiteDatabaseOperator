@@ -102,7 +102,6 @@ class SQLiteTableOperator {
                 createTableQuery += ",\n"
                 var columnNames = ""
                 var referenceColumnNames = ""
-                var isDeleteCascade = false
                 foreignKeyDefineColumns.forEachIndexed { i, columnDefine ->
                     if (columnDefine.foreignKeyDefine != null) {
                         if (i > 0) {
@@ -111,14 +110,23 @@ class SQLiteTableOperator {
                         }
                         columnNames += columnDefine.columnName
                         referenceColumnNames += columnDefine.foreignKeyDefine.columnName
-                        if(columnDefine.foreignKeyDefine.isDeleteCascade) {
-                            isDeleteCascade = true
-                        }
                     }
                 }
                 createTableQuery += "    FOREIGN KEY($columnNames) REFERENCES $tableName($referenceColumnNames)"
-                if (isDeleteCascade) {
-                    createTableQuery += " ON DELETE CASCADE"
+                val foreignKeyActionDefine = sqliteTableDefine.foreignKeyActionDefines?.find { it.tableName == tableName }
+                if (foreignKeyActionDefine != null) {
+                    when (foreignKeyActionDefine.updateAction) {
+                        SQLiteForeignKeyAction.RESTRICT -> createTableQuery += " ON UPDATE RESTRICT"
+                        SQLiteForeignKeyAction.SET_NULL -> createTableQuery += " ON UPDATE SET NULL"
+                        SQLiteForeignKeyAction.SET_DEFAULT -> createTableQuery += " ON UPDATE SET DEFAULT"
+                        SQLiteForeignKeyAction.CASCADE -> createTableQuery += " ON UPDATE CASCADE"
+                    }
+                    when (foreignKeyActionDefine.deleteAction) {
+                        SQLiteForeignKeyAction.RESTRICT -> createTableQuery += " ON DELETE RESTRICT"
+                        SQLiteForeignKeyAction.SET_NULL -> createTableQuery += " ON DELETE SET NULL"
+                        SQLiteForeignKeyAction.SET_DEFAULT -> createTableQuery += " ON DELETE SET DEFAULT"
+                        SQLiteForeignKeyAction.CASCADE -> createTableQuery += " ON DELETE CASCADE"
+                    }
                 }
             }
             createTableQuery += "\n);"

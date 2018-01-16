@@ -1,10 +1,6 @@
 package com.eigoninaritai.sqlitedatabaseoperatorsample
 
-import com.eigoninaritai.sqlitedatabaseoperator.Column
-import com.eigoninaritai.sqlitedatabaseoperator.ForeignKey
-import com.eigoninaritai.sqlitedatabaseoperator.PrimaryKey
-import com.eigoninaritai.sqlitedatabaseoperator.Table
-import com.eigoninaritai.sqlitedatabaseoperator.Unique
+import com.eigoninaritai.sqlitedatabaseoperator.*
 
 /**
  * SQLiteDatabaseOperatorのサンプルテーブル。
@@ -40,12 +36,13 @@ data class SampleTable(
  */
 @Table("sample_table2")
 @PrimaryKey("_id", "primary_key_string")
+@ForeignKeyAction(SampleTable::class, deleteAction = SQLiteForeignKeyAction.CASCADE)
 data class SampleTable2(
     @Column(name = "_id")
     val id: Long = 0,
     @Column(name = "primary_key_string")
     val primaryKeyString: String,
     @Column(name = "foreign_reference_column")
-    @ForeignKey(SampleTable::class, "limited_length_string", isDeleteCascade = true)
+    @ForeignKey(SampleTable::class, "limited_length_string")
     val foreignReferenceColumn: String
 ) : SQLiteTableBase()

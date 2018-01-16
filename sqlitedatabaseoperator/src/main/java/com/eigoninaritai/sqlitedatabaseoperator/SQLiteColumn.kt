@@ -89,18 +89,60 @@ enum class SQLiteTrigger {
  *
  * @property tableClass 外部キー制約で参照するテーブルクラス。
  * @property columnName 外部キー制約で参照するテーブルクラスに定義されているカラム名。
- * @property isDeleteCascade ON DELETE CASCADEを設定するかどうかを表す。
- * falseの場合、設定をしない。
- * trueの場合、参照している外部キーが削除された場合、この外部キーを参照している行も削除される。
- * デフォルト値はfalse。
- * isDeleteCascadeがtrueの場合、参照テーブルが同じ他のカラムのisDeleteCascadeがfalseでもON DELETE CASCADEが設定される。
  */
 @Target(AnnotationTarget.PROPERTY)
 annotation class ForeignKey(
     val tableClass: KClass<*>,
-    val columnName: String,
-    val isDeleteCascade: Boolean = false
+    val columnName: String
 )
+
+/**
+ * SQLiteの外部キー制約のアクションを表すアノテーション。
+ *
+ * このアノテーションが付与されたクラスにTableアノテーションが付与されている場合、このアノテーションに渡されたテーブルを参照する外部キー制約にアクションが設定される。
+ * このアノテーションは一つのクラスに複数指定することができる。
+ *
+ * @property tableClass 外部キー制約で参照するテーブルクラス。
+ * @property updateAction 外部キー制約で参照するテーブルのカラムが更新された時のアクション。
+ * @property deleteAction 外部キー制約で参照するテーブルの行が削除された時のアクション。
+ */
+@Target(AnnotationTarget.CLASS)
+@Repeatable
+annotation class ForeignKeyAction(
+    val tableClass: KClass<*>,
+    val updateAction: SQLiteForeignKeyAction = SQLiteForeignKeyAction.NO_ACTION,
+    val deleteAction: SQLiteForeignKeyAction = SQLiteForeignKeyAction.NO_ACTION
+)
+
+/**
+ * SQLiteの外部キー制約のアクションを表す。
+ */
+enum class SQLiteForeignKeyAction {
+    /**
+     * NO ACTIONを表す。
+     */
+    NO_ACTION,
+
+    /**
+     * RESTRICTを表す。
+     */
+    RESTRICT,
+
+    /**
+     * SET NULLを表す。
+     */
+    SET_NULL,
+
+    /**
+     * SET DEFAULTを表す。
+     */
+    SET_DEFAULT,
+
+    /**
+     * CASCADEを表す。
+     */
+    CASCADE
+}
 
 /**
  * SQLiteのテーブルカラムを表す。
@@ -186,14 +228,25 @@ annotation class ForeignKey(
  *
  * @property tableName 外部キー制約で参照するテーブル名。
  * @property columnName 外部キー制約で参照するテーブルクラスに定義されているカラム名。
- * @property isDeleteCascade ON DELETE CASCADEを設定するかどうかを表す。
- * falseの場合、設定をしない。
- * trueの場合、参照している外部キーが削除された場合、この外部キーを参照している行も削除される。
  */
 @PublishedApi internal data class ForeignKeyDefine(
     val tableName: String,
-    val columnName: String,
-    val isDeleteCascade: Boolean
+    val columnName: String
+)
+
+/**
+ * SQLiteの外部キー制約のアクションを表す。
+ *
+ * このクラスは、SQLiteの外部キー制約のアクションの定義に使用される。
+ *
+ * @property tableName 外部キー制約で参照するテーブル名。
+ * @property updateAction 外部キー制約で参照するテーブルのカラムが更新された時のアクション。
+ * @property deleteAction 外部キー制約で参照するテーブルの行が削除された時のアクション。
+ */
+@PublishedApi internal data class ForeignKeyActionDefine(
+    val tableName: String,
+    val updateAction: SQLiteForeignKeyAction = SQLiteForeignKeyAction.NO_ACTION,
+    val deleteAction: SQLiteForeignKeyAction = SQLiteForeignKeyAction.NO_ACTION
 )
 
 /**
@@ -239,3 +292,17 @@ open class SQLiteColumnNotFoundException(message: String) : RuntimeException(mes
  * @param message エラーの内容。
  */
 open class SQLiteColumnDefaultValueTypeMismatchException(message: String) : RuntimeException(message)
+
+/**
+ * 外部キー制約が存在しない場合に発生する。
+ *
+ * @param message エラーの内容。
+ */
+open class SQLiteForeignKeyNotExistException(message: String) : RuntimeException(message)
+
+/**
+ * 同一の外部キー制約に複数の外部キー制約のアクションが指定されている場合に発生する。
+ *
+ * @param message エラーの内容。
+ */
+open class SQLiteSameForeignKeyActionExistException(message: String) : RuntimeException(message)

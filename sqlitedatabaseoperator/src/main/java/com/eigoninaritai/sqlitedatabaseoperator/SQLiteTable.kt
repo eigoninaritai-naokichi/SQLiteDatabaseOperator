@@ -79,6 +79,8 @@ internal object SQLiteAnnotationOperator {
      * ユニークに指定されたカラム名が空文字で指定されている場合、実行時に発生する。
      * @throws SQLiteIndexNotSpecifiedException インデックスにカラムが指定されていない場合、実行時に発生する。
      * インデックスに指定されたカラム名が空文字で指定されている場合、実行時に発生する。
+     * @throws SQLiteForeignKeyNotExistException 外部キー制約のアクションを設定する外部キーが存在しない場合、実行時に発生する。
+     * @throws SQLiteSameForeignKeyActionExistException 同一の外部キー制約に対して複数の外部キー制約のアクションが指定されている場合、実行時に発生する。
      * @throws SQLiteSameColumnExistException プライマリキーに渡されたカラムが重複している場合、実行時に発生する。
      * ユニークに渡されたカラムが重複している場合、実行時に発生する。
      * インデックスに渡されたカラムが重複している場合、実行時に発生する。
@@ -126,7 +128,7 @@ internal object SQLiteAnnotationOperator {
                             if (!checkExistColumn(foreignKey.tableClass, foreignKey.columnName)) throw SQLiteColumnNotFoundException("${ForeignKey::class.simpleName}アノテーションに指定されたカラム名が存在しません。:${getTableName(foreignKey.tableClass)}.${foreignKey.columnName}")
 
                             // 外部キー制約定義を作成
-                            foreignKeyDefine = ForeignKeyDefine(getTableName(foreignKey.tableClass), foreignKey.columnName, foreignKey.isDeleteCascade)
+                            foreignKeyDefine = ForeignKeyDefine(getTableName(foreignKey.tableClass), foreignKey.columnName)
                         }
                     }
                 }
@@ -241,6 +243,30 @@ internal object SQLiteAnnotationOperator {
             }
         }
 
+        // 外部キー制約のアクションのリストを取得
+        var foreignKeyActionDefines: MutableList<ForeignKeyActionDefine>? = null
+        val foreignKeyActionAnnotations = findTableClassAnnotations<ForeignKeyAction>(tableClass, isFindSuperClass = true)
+        if (!foreignKeyActionAnnotations.isEmpty()) {
+            foreignKeyActionDefines = mutableListOf()
+            foreignKeyActionAnnotations.forEach {
+                val foreignKeyActionDefineTemp = ForeignKeyActionDefine(getTableName(it.tableClass), it.updateAction, it.deleteAction)
+                val foreignKeyDefineColumnsMap = SQLiteTableOperator.getForeignKeyDefineColumnsMap(columnDefines)
+
+                // 外部キー制約のアクションを設定する外部キーが存在しない場合、エラー
+                if (!foreignKeyDefineColumnsMap.keys.contains(foreignKeyActionDefineTemp.tableName)) throw SQLiteForeignKeyNotExistException("${foreignKeyActionDefineTemp.tableName}を参照する外部キー制約がないため、外部キー制約のアクションを設定することができません。")
+
+                // 同一の外部キー制約に対して複数の外部キー制約のアクションが指定されている場合、エラー
+                foreignKeyActionAnnotations.forEach { comparedForeignActionAnnotation ->
+                    if (it !== comparedForeignActionAnnotation) {
+                        if (it.tableClass == comparedForeignActionAnnotation.tableClass) throw SQLiteSameForeignKeyActionExistException("同一の外部キー制約に複数の外部キー制約のアクションが設定されています。:${it.tableClass}")
+                    }
+                }
+
+                // 外部キー制約のアクションのリストを追加
+                foreignKeyActionDefines.add(foreignKeyActionDefineTemp)
+            }
+        }
+
         // 特殊な処理のリストを取得
         val specifiedQueriesTemp = mutableListOf<String>()
         columnAnnotationProperties.forEach { columnAnnotationProperty ->
@@ -272,10 +298,11 @@ internal object SQLiteAnnotationOperator {
         // テーブル定義を作成
         return SQLiteTableDefine(
             tableClass,
-            columnDefines,
+            columnDefines.toList(),
             primaryKeyColumnNames,
             uniqueColumnNames,
             indexColumnNamesList?.toList(),
+            foreignKeyActionDefines?.toList(),
             specifiedQueries?.toList()
         )
     }
@@ -506,6 +533,7 @@ internal object SQLiteAnnotationOperator {
  * @property primaryKeyColumnNames プライマリキーに設定されたカラム名のリスト。
  * @property uniqueColumnNames ユニークに設定されたカラム名のリスト。
  * @property indexColumnNamesList インデックスに設定されたカラム名のリスト。
+ * @property foreignKeyActionDefines 外部キー制約のアクションのリスト。
  * @property specifiedQueries トリガーなどの特殊な処理のリスト。
  * @constructor 問題があった場合エラーが発生する。
  * @throws SQLiteSameColumnExistException カラム定義のリストに同じ名前のカラムがあった場合、実行時に発生する。
@@ -518,6 +546,7 @@ internal object SQLiteAnnotationOperator {
     val primaryKeyColumnNames: List<String>?,
     val uniqueColumnNames: List<String>?,
     val indexColumnNamesList: List<List<String>>?,
+    var foreignKeyActionDefines: List<ForeignKeyActionDefine>?,
     val specifiedQueries: List<String>?
 ) {
     /**
