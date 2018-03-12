@@ -16,8 +16,8 @@ import java.util.*
  * トリガーによって更新される。
  */
 abstract class SQLiteTableBase(
-    @Column(name = "created_at", defaultValue = ColumnConstant.CURRENT_TIME_AS_DEFAULT)
+    @Column(name = "created_at", defaultValue = ColumnConstant.CURRENT_TIME_AS_DEFAULT, shouldUseInInsert = false, shouldUseInUpdate = false)
     val createdAt: Calendar = Calendar.getInstance(),
-    @Column(name = "updated_at", defaultValue = ColumnConstant.CURRENT_TIME_AS_DEFAULT, triggers = [SQLiteTrigger.UPDATED_TIME_TRIGGER])
+    @Column(name = "updated_at", defaultValue = ColumnConstant.CURRENT_TIME_AS_DEFAULT, shouldUseInInsert = false, shouldUseInUpdate = false, triggers = [SQLiteTrigger.UPDATED_TIME_TRIGGER])
     val updatedAt: Calendar = Calendar.getInstance()
 )

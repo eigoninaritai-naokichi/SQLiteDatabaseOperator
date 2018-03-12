@@ -118,7 +118,7 @@ internal object SQLiteAnnotationOperator {
                 val columnLength = column.length
                 val isAutoIncrement = column.isAutoIncrement
                 val defaultValue = if (column.defaultValue == "") null else if (columnType == SQLiteType.TEXT) "'${column.defaultValue}'" else column.defaultValue
-                val isNotNull: Boolean = !columnAnnotationProperty.returnType.isMarkedNullable
+                val isNotNull = !columnAnnotationProperty.returnType.isMarkedNullable
                 var foreignKeyDefine: ForeignKeyDefine? = null
                 foreignKeyAnnotationProperties.forEach { foreignKeyAnnotationProperty ->
                     if (columnAnnotationProperty.name == foreignKeyAnnotationProperty.name) {
@@ -132,14 +132,19 @@ internal object SQLiteAnnotationOperator {
                         }
                     }
                 }
+                val shouldUseInInsert = column.shouldUseInInsert
+                val shouldUseInUpdate = column.shouldUseInUpdate
                 columnDefines.add(SQLiteColumnDefine(
+                    columnAnnotationProperty,
                     columnName,
                     columnType,
                     columnLength,
                     isAutoIncrement,
                     defaultValue,
                     isNotNull,
-                    foreignKeyDefine
+                    foreignKeyDefine,
+                    shouldUseInInsert,
+                    shouldUseInUpdate
                 ))
             }
         }
@@ -150,7 +155,7 @@ internal object SQLiteAnnotationOperator {
         // プライマリキーに設定されているカラムのリストを取得
         var primaryKeyColumnNames: List<String>? = null
         val primaryKeyAnnotation = findTableClassAnnotations<PrimaryKey>(tableClass)
-        if (!primaryKeyAnnotation.isEmpty()) {
+        if (primaryKeyAnnotation.isNotEmpty()) {
             val primaryKeyColumnNamesTemp = primaryKeyAnnotation.first().columnNames.toList()
 
             // プライマリキーにカラムが指定されていない場合、エラー
@@ -181,7 +186,7 @@ internal object SQLiteAnnotationOperator {
         // ユニークに設定されているカラムのリストを取得
         var uniqueColumnNames: List<String>? = null
         val uniqueAnnotation = findTableClassAnnotations<Unique>(tableClass)
-        if (!uniqueAnnotation.isEmpty()) {
+        if (uniqueAnnotation.isNotEmpty()) {
             val uniqueColumnNamesTemp = uniqueAnnotation.first().columnNames.toList()
 
             // ユニークにカラムが指定されていない場合、エラー
@@ -212,7 +217,7 @@ internal object SQLiteAnnotationOperator {
         // インデックスに設定されているカラムのリストを取得
         var indexColumnNamesList: MutableList<List<String>>? = null
         val indexAnnotations = findTableClassAnnotations<Index>(tableClass, isFindSuperClass = true)
-        if (!indexAnnotations.isEmpty()) {
+        if (indexAnnotations.isNotEmpty()) {
             indexColumnNamesList = mutableListOf()
             indexAnnotations.forEach {
                 val indexColumnNamesTemp = it.columnNames.toList()
@@ -246,7 +251,7 @@ internal object SQLiteAnnotationOperator {
         // 外部キー制約のアクションのリストを取得
         var foreignKeyActionDefines: MutableList<ForeignKeyActionDefine>? = null
         val foreignKeyActionAnnotations = findTableClassAnnotations<ForeignKeyAction>(tableClass, isFindSuperClass = true)
-        if (!foreignKeyActionAnnotations.isEmpty()) {
+        if (foreignKeyActionAnnotations.isNotEmpty()) {
             foreignKeyActionDefines = mutableListOf()
             foreignKeyActionAnnotations.forEach {
                 val foreignKeyActionDefineTemp = ForeignKeyActionDefine(getTableName(it.tableClass), it.updateAction, it.deleteAction)
@@ -272,7 +277,7 @@ internal object SQLiteAnnotationOperator {
         columnAnnotationProperties.forEach { columnAnnotationProperty ->
             val column = columnAnnotationProperty.annotations.find { it is Column } as? Column
             if (column != null) {
-                if (!column.triggers.isEmpty()) {
+                if (column.triggers.isNotEmpty()) {
                     column.triggers.forEach {
                         val trigger: String
                         when (it) {
@@ -284,7 +289,7 @@ internal object SQLiteAnnotationOperator {
             }
         }
         val queryAnnotations = findTableClassAnnotations<Query>(tableClass, isFindSuperClass = true)
-        if (!queryAnnotations.isEmpty()) {
+        if (queryAnnotations.isNotEmpty()) {
             queryAnnotations.forEach {
                 // 特殊な処理を表すクエリが指定されていない場合、エラー
                 if (it.queries.isEmpty()) throw SQLiteQueryNotSpecifiedException("クエリを指定してください。:$tableName")
@@ -584,9 +589,9 @@ internal object SQLiteAnnotationOperator {
         indexColumnNamesList?.forEach { targetIndexColumnNames ->
             indexColumnNamesList.forEach { comparedIndexColumnNames ->
                 if (
-                targetIndexColumnNames != comparedIndexColumnNames &&
-                        targetIndexColumnNames.size == comparedIndexColumnNames.size
-                        ) {
+                    targetIndexColumnNames != comparedIndexColumnNames &&
+                    targetIndexColumnNames.size == comparedIndexColumnNames.size
+                ) {
                     var isSameColumn = true
                     for (targetColumnName in targetIndexColumnNames) {
                         for (comparedColumnName in comparedIndexColumnNames) {

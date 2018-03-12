@@ -15,16 +15,16 @@ import com.eigoninaritai.sqlitedatabaseoperator.*
 @PrimaryKey("_id")
 @Unique("limited_length_string")
 data class SampleTable(
-    @Column(name = "_id")
+    @Column(name = "_id", shouldUseInInsert = false, shouldUseInUpdate = false)
     val id: Long = 0,
     @Column(name = "nullable_int")
     val nullableInt: Int?,
     @Column(name = "limited_length_string", length = 256)
     val limitedLengthString: String,
     @Column(name = "int_with_default", defaultValue = "12345")
-    val intWithDefault: Int,
+    val intWithDefault: Int = 12345,
     @Column(name = "string_with_default", defaultValue = "Default Value")
-    val stringWithDefault: String
+    val stringWithDefault: String = "Default Value"
 ) : SQLiteTableBase()
 
 /**
@@ -38,7 +38,7 @@ data class SampleTable(
 @PrimaryKey("_id", "primary_key_string")
 @ForeignKeyAction(SampleTable::class, deleteAction = SQLiteForeignKeyAction.CASCADE)
 data class SampleTable2(
-    @Column(name = "_id")
+    @Column(name = "_id", shouldUseInInsert = false, shouldUseInUpdate = false)
     val id: Long = 0,
     @Column(name = "primary_key_string")
     val primaryKeyString: String,

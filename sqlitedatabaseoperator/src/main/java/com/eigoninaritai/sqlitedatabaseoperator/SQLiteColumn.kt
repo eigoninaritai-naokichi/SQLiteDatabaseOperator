@@ -1,6 +1,7 @@
 package com.eigoninaritai.sqlitedatabaseoperator
 
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty1
 
 /**
  * SQLiteのテーブルカラムを表すアノテーション。
@@ -30,9 +31,19 @@ import kotlin.reflect.KClass
  * このアノテーションが付与されたプロパティがNull許容型かつ挿入する値として指定されない場合、エラーが発生する。
  * @property isAutoIncrement 定義されるカラムがオートインクリメントするかどうかを表す。
  * プライマリキーかつInt型の場合にのみ設定できる。
- * falseの場合、オートインクリメントを設定しない。
  * trueの場合、オートインクリメントを設定する。
+ * falseの場合、オートインクリメントを設定しない。
  * デフォルト値はfalse。
+ * @property shouldUseInInsert テーブルにインサートする時に、このアノテーションから生成されたカラムを使用するかどうかを表す。
+ * trueの場合、このアノテーションから生成されたカラムをINSERT文に含め、このアノテーションが付与されたプロパティの値を使用する。
+ * falseの場合、このアノテーションから生成されたカラムをINSERT文に含めず、このアノテーションが付与されたプロパティの値も使用しない。
+ * INSERT文に含まれないため、インサート時にテーブルに設定されたデフォルト値が挿入される。
+ * 例えば、INTEGER型に設定したプライマリキーを自動インクリメントしたい場合に役に立つ。
+ * デフォルト値はtrue。
+ * @property shouldUseInUpdate 行をアップデートする時に、このアノテーションから生成されたカラムを使用するかどうかを表す。
+ * trueの場合、このアノテーションから生成されたカラムをUPDATE文に含め、このアノテーションが付与されたプロパティの値を使用する。
+ * falseの場合、このアノテーションから生成されたカラムをUPDATE文に含めず、このアノテーションが付与されたプロパティの値も使用しない。
+ * デフォルト値はtrue。
  * @property triggers 定義されるカラムに対して使用したいカラムのトリガーを表す。
  * 指定されたトリガーがそのテーブル定義の最後に設定される。
  */
@@ -42,6 +53,8 @@ annotation class Column(
     val length: Int = ColumnConstant.LENGTH_NOT_LIMIT,
     val defaultValue: String = "",
     val isAutoIncrement: Boolean = false,
+    val shouldUseInInsert: Boolean = true,
+    val shouldUseInUpdate: Boolean = true,
     vararg val triggers: SQLiteTrigger
 )
 
@@ -67,7 +80,7 @@ object ColumnConstant {
     /**
      * 初期値に現在時刻を指定する場合に使用する。
      */
-    const val CURRENT_TIME_AS_DEFAULT = "(DATETIME('now', 'localtime'))"
+    const val CURRENT_TIME_AS_DEFAULT = "(STRFTIME('%s', 'now', 'localtime') * 1000)"
 }
 
 /**
@@ -149,6 +162,8 @@ enum class SQLiteForeignKeyAction {
  *
  * このクラスは、SQLiteTableDefineクラスに保持され、データベースとやり取りするためにSQLiteTableOperaterクラスから使用される。
  *
+ * @property columnAnnotationProperty Columnアノテーションが付与されたプロパティ。
+ * データベースのテーブルとのやり取りの際に、テーブルクラスからプロパティを見つけるために使用される。
  * @property columnName カラムの名前を表す。
  * @property columnType カラムの型を表す。
  * @property columnLength カラムの長さを表す。
@@ -159,17 +174,30 @@ enum class SQLiteForeignKeyAction {
  * falseの場合、NOT NULLを設定しない。
  * trueの場合、NOT NULLを設定する。
  * @property foreignKeyDefine カラムが参照する外部キーを表す。
+ * @property shouldUseInInsert テーブルにインサートする時に、このアノテーションから生成されたカラムを使用するかどうかを表す。
+ * trueの場合、このアノテーションから生成されたカラムをINSERT文に含め、このアノテーションが付与されたプロパティの値を使用する。
+ * falseの場合、このアノテーションから生成されたカラムをINSERT文に含めず、このアノテーションが付与されたプロパティの値も使用しない。
+ * INSERT文に含まれないため、インサート時にテーブルに設定されたデフォルト値が挿入される。
+ * 例えば、INTEGER型に設定したプライマリキーを自動インクリメントしたい場合に役に立つ。
+ * デフォルト値はtrue。
+ * @property shouldUseInUpdate 行をアップデートする時に、このアノテーションから生成されたカラムを使用するかどうかを表す。
+ * trueの場合、このアノテーションから生成されたカラムをUPDATE文に含め、このアノテーションが付与されたプロパティの値を使用する。
+ * falseの場合、このアノテーションから生成されたカラムをUPDATE文に含めず、このアノテーションが付与されたプロパティの値も使用しない。
+ * デフォルト値はtrue。
  * @constructor 問題があった場合エラーを発生させる。
  * @throws SQLiteColumnDefaultValueTypeMismatchException カラムの型と初期値の値が一致しない場合、実行時に発生する。
  */
 @PublishedApi internal data class SQLiteColumnDefine(
+    val columnAnnotationProperty: KProperty1<*, *>,
     val columnName: String,
     val columnType: SQLiteType,
     val columnLength: Int,
     val isAutoIncrement: Boolean,
     val defaultValue: String?,
     val isNotNull: Boolean,
-    val foreignKeyDefine: ForeignKeyDefine?
+    val foreignKeyDefine: ForeignKeyDefine?,
+    val shouldUseInInsert: Boolean,
+    val shouldUseInUpdate: Boolean
 ) {
     init {
         // 数値型、BOOLEAN型、DATETIME型に変換できない値が設定されていた場合、エラー
