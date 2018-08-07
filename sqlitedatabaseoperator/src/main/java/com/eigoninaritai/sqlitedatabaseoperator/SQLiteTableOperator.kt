@@ -316,7 +316,7 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
                 ) throw IllegalArgumentException("テーブルクラスのコンストラクタにColumnアノテーションが付与されたプロパティと一致するパラメータがないため、テーブルクラスのインスタンス作成に失敗しました。")
 
                 // コンストラクタに渡す値を作成
-                constructorArgs.put(parameter, getParameterValueFromCursor(targetColumnDefine.columnName, parameter.type, cursor))
+                constructorArgs[parameter] = getParameterValueFromCursor(targetColumnDefine.columnName, parameter.type, cursor)
             }
 
             // インスタンスを作成し、カラム定義と一致するミュータブルなプロパティに値を設定
