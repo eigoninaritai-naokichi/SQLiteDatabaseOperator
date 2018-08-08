@@ -12,7 +12,9 @@ import com.eigoninaritai.sqlitedatabaseoperator.SQLiteTableOperator
  */
 class MainActivity : AppCompatActivity() {
     /**
+     * アクティビティを作成する。
      *
+     * @param savedInstanceState 特定の状況下でアクティビティ廃棄直前に保存された情報。
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
