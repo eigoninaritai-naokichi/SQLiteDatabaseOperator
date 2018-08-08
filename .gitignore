@@ -24,6 +24,8 @@ app/build/
 
 .idea/dictionaries/
 .idea/*.xml
+.idea/caches/
+.idea/codeStyles/
 
 !.idea/gradle.xml
 !.idea/runConfigurations/*.xml
