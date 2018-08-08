@@ -160,7 +160,7 @@ enum class SQLiteForeignKeyAction {
 /**
  * SQLiteのテーブルカラムを表す。
  *
- * このクラスは、SQLiteTableDefineクラスに保持され、データベースとやり取りするためにSQLiteTableOperaterクラスから使用される。
+ * このクラスは、SQLiteTableDefineクラスに保持され、データベースとやり取りするためにSQLiteTableOperatorクラスから使用される。
  *
  * @property columnAnnotationProperty Columnアノテーションが付与されたプロパティ。
  * データベースのテーブルとのやり取りの際に、テーブルクラスからプロパティを見つけるために使用される。
