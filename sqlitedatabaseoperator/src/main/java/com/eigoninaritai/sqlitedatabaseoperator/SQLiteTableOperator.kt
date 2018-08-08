@@ -476,16 +476,15 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
     /**
      * 指定されたテーブルクラスを使用し、条件に従ってSQLiteテーブルから行を削除する。
      *
-     * @param T Tableアノテーションが付与されたクラス。
      * @param table Tableアノテーションが付与されたクラス。
      * @param whereConditions 削除に使用する条件。
      * @return 削除された行の数。
      * @throws SQLiteAnnotationNotAttachedException 渡されたテーブルクラスにTableアノテーションが付与されていない場合、実行時に発生する。
      * 渡されたテーブルクラスの1つ以上のプロパティにColumnアノテーションが付与されていない場合、実行時に発生する。
      */
-    inline fun <reified T> delete(table: T, whereConditions: List<WhereCondition>?): Int {
+    fun delete(table: Any, whereConditions: List<WhereCondition>?): Int {
         val (whereClause, whereArgs) = if (whereConditions != null) WhereCondition.makeWhere(table as Any, null, whereConditions) else Pair(null, null)
-        val sqliteTableDefine = SQLiteTableOperator.getSQLiteTableDefine(T::class)
+        val sqliteTableDefine = SQLiteTableOperator.getSQLiteTableDefine(table::class)
         return writableDatabase.delete(sqliteTableDefine.tableName, whereClause, whereArgs)
     }
 
