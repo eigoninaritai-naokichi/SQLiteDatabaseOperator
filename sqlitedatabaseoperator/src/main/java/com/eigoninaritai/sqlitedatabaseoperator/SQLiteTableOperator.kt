@@ -515,7 +515,7 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
      * nullの場合、HAVINGを指定しない。
      * @param orderBy ORDER BYを表す。
      * nullの場合、ORDER BYを指定しない。
-     * @columnAnnotationProperties 取得したいカラムのリスト。
+     * @param columnAnnotationProperties 取得したいカラムのリスト。
      * nullの場合、全てのカラムを取得する。
      * @param distinct DISTINCTを行うかどうかを表す。
      * @param limit 取得するデータの上限を表す。
@@ -526,22 +526,14 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
         val tableClass = T::class
         val emptyTableInstance: Any = SQLiteTableOperator.makeInstanceFromCursor(tableClass, null)
 
-        // 取得するカラム名を取得
+        // データ取得で使用する条件の準備
         val columns = if (columnAnnotationProperties != null) SQLiteTableOperator.getColumnNames(emptyTableInstance, null, columnAnnotationProperties) else arrayOf()
-
-        // WHERE句の取得
         val (whereClause, whereArgs) = if (whereConditions != null) WhereCondition.makeWhere(emptyTableInstance, null, whereConditions) else Pair(null, arrayOf<String>())
-
-        // GROUP BY句の取得
         val groupByClause = groupBy?.makeClause(emptyTableInstance, null)
-
-        // HAVING句の取得
         val havingClause = having?.makeClause(emptyTableInstance, null)
-
-        // ORDER BY句の取得
         val orderByClause = orderBy?.makeClause(emptyTableInstance, null)
 
-        // データを取得し、取得したデータでテーブルクラスのインスタンスを作成
+        // データを取得し、取得したデータでテーブルクラスのインスタンスを作成し、リストにする
         val sqliteTableDefine = SQLiteTableOperator.getSQLiteTableDefine(tableClass)
         val selectList: MutableList<T> = mutableListOf()
         readableDatabase.query(distinct, sqliteTableDefine.tableName, columns, whereClause, whereArgs, groupByClause, havingClause, orderByClause, limit?.toString())!!.use { cursor ->
