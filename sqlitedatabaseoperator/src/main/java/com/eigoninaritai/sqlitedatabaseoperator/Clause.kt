@@ -104,6 +104,7 @@ class SelectColumnWithFunction(private val function: String, private val columnA
     override fun makeColumnPhrase(table: Any): String {
         val columnName: String? = if (columnAnnotationProperty != null) SQLiteTableOperator.getColumnName(table, columnAnnotationProperty) else null
         return if (columnName != null) function.replace("?", columnName) else function
+    }
 }
 
 /**
