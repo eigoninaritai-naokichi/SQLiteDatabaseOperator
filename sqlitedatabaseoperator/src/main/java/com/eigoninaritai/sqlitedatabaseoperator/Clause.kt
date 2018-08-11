@@ -43,6 +43,41 @@ abstract class Clause(private val clauseName: String) {
 }
 
 /**
+ * SELECT句で指定するカラムを表す基底クラス。
+ *
+ * @property columnAlias カラムのエイリアス名。
+ * nullの場合、カラムのエイリアスを設定しない。
+ */
+abstract class SelectColumnBase(private val columnAlias: String?) {
+    /**
+     * SELECT句で指定するカラムを作成する。
+     *
+     * @param table 指定するカラムを作成する際に使用するテーブルクラス。
+     * @param tableAlias カラムに使用するテーブルエイリアス名。
+     * nullだった場合、エイリアスは使用しない。
+     * @return 作成したSELECT句で指定するカラム。
+     */
+    fun makeColumnPhrase(table: Any, tableAlias: String?): String {
+        val columnPhrase = makeColumnPhrase(table)
+        if (!tableAlias.isNullOrEmpty()) {
+            "$tableAlias.$columnPhrase"
+        }
+        if (!columnAlias.isNullOrEmpty()) {
+            "$columnPhrase AS $columnAlias"
+        }
+        return columnPhrase
+    }
+
+    /**
+     * SELECT句で指定するカラムを作成する。
+     *
+     * @param table 指定するカラムを作成する際に使用するテーブルクラス。
+     * @return 作成したSELECT句で指定するカラム。
+     */
+    abstract fun makeColumnPhrase(table: Any): String
+}
+
+/**
  * 渡されたColumnアノテーションが付与されたプロパティを使用して、SQLiteの句を表す基底クラス。
  *
  * @param clauseName 句の名前。
