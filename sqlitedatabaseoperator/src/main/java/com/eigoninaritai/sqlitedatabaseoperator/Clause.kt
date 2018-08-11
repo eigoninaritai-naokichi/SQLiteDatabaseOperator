@@ -58,13 +58,8 @@ abstract class SelectColumnBase(private val columnAlias: String?) {
      * @return 作成したSELECT句で指定するカラム。
      */
     fun makeColumnPhrase(table: Any, tableAlias: String?): String {
-        val columnPhrase = makeColumnPhrase(table)
-        if (!tableAlias.isNullOrEmpty()) {
-            "$tableAlias.$columnPhrase"
-        }
-        if (!columnAlias.isNullOrEmpty()) {
-            "$columnPhrase AS $columnAlias"
-        }
+        val columnPhrase = SQLiteTableOperator.addTableAlias(tableAlias, makeColumnPhrase(table))
+        if (!columnAlias.isNullOrEmpty()) "$columnPhrase AS $columnAlias"
         return columnPhrase
     }
 
@@ -75,6 +70,40 @@ abstract class SelectColumnBase(private val columnAlias: String?) {
      * @return 作成したSELECT句で指定するカラム。
      */
     abstract fun makeColumnPhrase(table: Any): String
+}
+
+/**
+ * SELECT句で指定するカラムをColumnアノテーションが付与されたプロパティで表す。
+ *
+ * @property columnAnnotationProperty 指定するカラムを作成する際に使用するColumnアノテーションが付与されたプロパティ。
+ * @param columnAlias カラムのエイリアス名。
+ */
+class SelectColumn(private val columnAnnotationProperty: KProperty1<*, *>, columnAlias: String? = null) : SelectColumnBase(columnAlias) {
+    override fun makeColumnPhrase(table: Any): String = SQLiteTableOperator.getColumnName(table, columnAnnotationProperty)
+}
+
+/**
+ * SELECT句で指定するカラムを渡されたカラム名で表す。
+ *
+ * @property column 指定するカラムを作成する際に使用するカラム名。
+ * @param columnAlias カラムのエイリアス名。
+ */
+class SelectColumnWithString(private val column: String, columnAlias: String? = null) : SelectColumnBase(columnAlias) {
+    override fun makeColumnPhrase(table: Any): String = column
+}
+
+/**
+ * SELECT句で指定するカラムを渡された関数で表す。
+ *
+ * @property function 指定するカラムを作成する際に使用する関数。
+ * 関数の引数に?を記述することで、全ての?をcolumnAnnotationPropertyで指定されたカラム名に置き換える。
+ * @property columnAnnotationProperty 関数の引数に使用するColumnアノテーションが付与されたプロパティ。
+ * @param columnAlias カラムのエイリアス名。
+ */
+class SelectColumnWithFunction(private val function: String, private val columnAnnotationProperty: KProperty1<*, *>? = null, columnAlias: String? = null) : SelectColumnBase(columnAlias) {
+    override fun makeColumnPhrase(table: Any): String {
+        val columnName: String? = if (columnAnnotationProperty != null) SQLiteTableOperator.getColumnName(table, columnAnnotationProperty) else null
+        return if (columnName != null) function.replace("?", columnName) else function
 }
 
 /**
