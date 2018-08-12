@@ -49,13 +49,13 @@ abstract class Clause(private val clauseName: String) {
  */
 class Select(private val selectColumns: List<SelectColumnBase>) : Clause("SELECT") {
     override fun makeClause(table: Any, tableAlias: String?): String {
-        var clause = ""
+        var clause = "\n"
         selectColumns.forEachIndexed { i, selectColumn ->
-            if (i > 0) clause += ","
-            clause += "${selectColumn.makeColumnPhrase(table, tableAlias)}\n"
+            if (i > 0) clause += ",\n"
+            clause += "${selectColumn.makeColumnPhrase(table, tableAlias)}"
         }
         val sqliteTableDefine = SQLiteTableOperator.getSQLiteTableDefine(table::class)
-        return "${clause}FROM ${sqliteTableDefine.tableName}"
+        return "${clause}\nFROM ${sqliteTableDefine.tableName}"
     }
 }
 
@@ -75,8 +75,8 @@ abstract class SelectColumnBase(private val columnAlias: String?) {
      * @return 作成したSELECT句で指定するカラム。
      */
     fun makeColumnPhrase(table: Any, tableAlias: String?): String {
-        val columnPhrase = SQLiteTableOperator.addTableAlias(tableAlias, makeColumnPhrase(table))
-        if (!columnAlias.isNullOrEmpty()) "$columnPhrase AS $columnAlias"
+        var columnPhrase = SQLiteTableOperator.addTableAlias(tableAlias, makeColumnPhrase(table))
+        if (!columnAlias.isNullOrEmpty()) columnPhrase += " AS $columnAlias"
         return columnPhrase
     }
 
