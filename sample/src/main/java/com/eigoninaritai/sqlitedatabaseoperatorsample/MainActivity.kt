@@ -3,9 +3,7 @@ package com.eigoninaritai.sqlitedatabaseoperatorsample
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import com.eigoninaritai.sqlitedatabaseoperator.Equal
-import com.eigoninaritai.sqlitedatabaseoperator.EqualWithValue
-import com.eigoninaritai.sqlitedatabaseoperator.SQLiteTableOperator
+import com.eigoninaritai.sqlitedatabaseoperator.*
 
 /**
  * SQLiteTableOperatorサンプル メインアクティビティ。
@@ -47,7 +45,22 @@ class MainActivity : AppCompatActivity() {
 
             // インサートしたデータを取得し、データを表示する
             var sampleTableList = sqliteTableOperator.selectDataList<SampleTable>(listOf(EqualWithValue(SampleTable::nullableInt, 2)))
-            sampleTableList.forEach { Log.println(Log.INFO, "Inserted shows.", it.toString()) }
+            sampleTableList.forEach { Log.println(Log.INFO, "Show inserted data.", it.toString()) }
+
+            // インサートしたデータをCursorで取得し、データを表示する
+            val select = Select(listOf(
+                SelectColumnWithFunction("count(?)", SampleTable::limitedLengthString, "COUNT"),
+                SelectColumn(SampleTable::id),
+                SelectColumnWithString("*")
+            ))
+            val whereConditions = listOf(NotEqualWithValue(SampleTable::limitedLengthString, "Foreign String"))
+            sqliteTableOperator.selectData<SampleTable>(select, whereConditions)!!.use { cursor ->
+                if (cursor.moveToFirst()){
+                    do {
+                        for (i in 0 until cursor.columnCount) Log.println(Log.INFO, "Show inserted data2.", "${cursor.getColumnName(i)}:${cursor.getString(i)}")
+                    } while (cursor.moveToNext())
+                }
+            }
 
             // 取得した最初のデータを更新する
             if (sampleTableList.isNotEmpty()) {
@@ -64,7 +77,11 @@ class MainActivity : AppCompatActivity() {
 
             // 更新したデータを取得し、データを表示する
             sampleTableList = sqliteTableOperator.selectDataList(listOf(EqualWithValue(SampleTable::nullableInt, 100)))
-            sampleTableList.forEach { Log.println(Log.INFO, "Updated shows.", it.toString()) }
+            sampleTableList.forEach { Log.println(Log.INFO, "Show updated data.", it.toString()) }
+
+            // 全てのデータを表示する
+            sampleTableList = sqliteTableOperator.selectDataList()
+            sampleTableList.forEach { Log.println(Log.INFO, "Show All data.", it.toString()) }
 
             // データを削除する
             if (sampleTableList.isNotEmpty()) {
@@ -77,10 +94,14 @@ class MainActivity : AppCompatActivity() {
                     sqliteTableOperator.endTransaction()
                 }
             }
-
-            // 全てのデータを表示する
-            sampleTableList = sqliteTableOperator.selectDataList()
-            sampleTableList.forEach { Log.println(Log.INFO, "All shows.", it.toString()) }
+            try {
+                sqliteTableOperator.beginTransaction()
+                sqliteTableOperator.delete<SampleTable>()
+                sqliteTableOperator.setTransactionSuccessful()
+            }
+            finally {
+                sqliteTableOperator.endTransaction()
+            }
         }
     }
 }
