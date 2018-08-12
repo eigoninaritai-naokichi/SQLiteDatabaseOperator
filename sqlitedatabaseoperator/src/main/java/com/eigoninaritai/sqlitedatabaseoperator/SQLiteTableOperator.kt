@@ -545,6 +545,29 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
         return selectList.toList()
     }
 
+    inline fun <reified T> selectDataList(select: Select, whereConditions: List<WhereCondition>? = null, groupBy: GroupBy? = null, having: Having? = null, orderBy: OrderBy? = null, otherStatement: String? = null): Cursor {
+        val tableClass = T::class
+        val emptyTableInstance: Any = SQLiteTableOperator.makeInstanceFromCursor(tableClass, null)
+
+        // SELECT句作成の準備
+        val selectClause = select.makeClause(emptyTableInstance, null, true)
+        val (whereClause, whereArgs) = if (whereConditions != null) WhereCondition.makeWhere(emptyTableInstance, null, whereConditions) else Pair(null, arrayOf<String>())
+        val groupByClause = groupBy?.makeClause(emptyTableInstance, null)
+        val havingClause = having?.makeClause(emptyTableInstance, null)
+        val orderByClause = orderBy?.makeClause(emptyTableInstance, null)
+
+        // SELECT句の作成
+        var selectStatement = "$selectClause\n"
+        if (!whereClause.isNullOrEmpty()) selectStatement += "$whereClause\n"
+        if (!groupByClause.isNullOrEmpty()) selectStatement += "$groupByClause\n"
+        if (!havingClause.isNullOrEmpty()) selectStatement += "$havingClause\n"
+        if (!orderByClause.isNullOrEmpty()) selectStatement += "$orderByClause\n"
+        if (!otherStatement.isNullOrEmpty()) selectStatement += "$otherStatement\n"
+
+        // データを取得し、取得したデータを返す
+        return readableDatabase.rawQuery(selectStatement, whereArgs)
+    }
+
     /**
      * 保持している読み書き可能なSQLiteデータベース操作インスタンスをクローズする。
      */
