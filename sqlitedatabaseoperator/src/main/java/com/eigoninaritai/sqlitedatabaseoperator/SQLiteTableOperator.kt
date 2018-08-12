@@ -545,7 +545,7 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
         return selectList.toList()
     }
 
-    inline fun <reified T> selectDataList(select: Select, whereConditions: List<WhereCondition>? = null, groupBy: GroupBy? = null, having: Having? = null, orderBy: OrderBy? = null, otherStatement: String? = null): Cursor {
+    inline fun <reified T> selectData(select: Select, whereConditions: List<WhereCondition>? = null, groupBy: GroupBy? = null, having: Having? = null, orderBy: OrderBy? = null, otherStatement: String? = null): Cursor {
         val tableClass = T::class
         val emptyTableInstance: Any = SQLiteTableOperator.makeInstanceFromCursor(tableClass, null)
 
@@ -558,7 +558,7 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
 
         // SELECT句の作成
         var selectStatement = "$selectClause\n"
-        if (!whereClause.isNullOrEmpty()) selectStatement += "$whereClause\n"
+        if (!whereClause.isNullOrEmpty()) selectStatement += "WHERE\n$whereClause"
         if (!groupByClause.isNullOrEmpty()) selectStatement += "$groupByClause\n"
         if (!havingClause.isNullOrEmpty()) selectStatement += "$havingClause\n"
         if (!orderByClause.isNullOrEmpty()) selectStatement += "$orderByClause\n"
