@@ -43,6 +43,23 @@ abstract class Clause(private val clauseName: String) {
 }
 
 /**
+ * SELECT句を表す。
+ *
+ * @property selectColumns 句で使用するカラム。
+ */
+class Select(private val selectColumns: List<SelectColumnBase>) : Clause("SELECT") {
+    override fun makeClause(table: Any, tableAlias: String?): String {
+        var clause = ""
+        selectColumns.forEachIndexed { i, selectColumn ->
+            if (i > 0) clause += ","
+            clause += "${selectColumn.makeColumnPhrase(table, tableAlias)}\n"
+        }
+        val sqliteTableDefine = SQLiteTableOperator.getSQLiteTableDefine(table::class)
+        return "${clause}FROM ${sqliteTableDefine.tableName}"
+    }
+}
+
+/**
  * SELECT句で指定するカラムを表す基底クラス。
  *
  * @property columnAlias カラムのエイリアス名。
@@ -69,7 +86,7 @@ abstract class SelectColumnBase(private val columnAlias: String?) {
      * @param table 指定するカラムを作成する際に使用するテーブルクラス。
      * @return 作成したSELECT句で指定するカラム。
      */
-    abstract fun makeColumnPhrase(table: Any): String
+    protected abstract fun makeColumnPhrase(table: Any): String
 }
 
 /**
