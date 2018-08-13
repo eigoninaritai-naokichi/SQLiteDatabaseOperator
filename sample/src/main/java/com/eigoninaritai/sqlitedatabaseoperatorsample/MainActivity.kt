@@ -56,8 +56,9 @@ class MainActivity : AppCompatActivity() {
             val whereConditions = listOf(NotEqualWithValue(SampleTable::limitedLengthString, "Foreign String"))
             sqliteTableOperator.selectData<SampleTable>(select, whereConditions)!!.use { cursor ->
                 if (cursor.moveToFirst()){
+                    Log.println(Log.INFO, "Show inserted data2.", "${SQLiteTableOperator.getColumnName<SampleTable>(SampleTable::nullableInt)}:${SQLiteTableOperator.getParameterValueFromCursor<SampleTable>(SampleTable::nullableInt, cursor)}")
                     do {
-                        for (i in 0 until cursor.columnCount) Log.println(Log.INFO, "Show inserted data2.", "${cursor.getColumnName(i)}:${cursor.getString(i)}")
+                        for (i in 0 until cursor.columnCount) Log.println(Log.INFO, "Show inserted data3.", "${cursor.getColumnName(i)}:${cursor.getString(i)}")
                     } while (cursor.moveToNext())
                 }
             }
