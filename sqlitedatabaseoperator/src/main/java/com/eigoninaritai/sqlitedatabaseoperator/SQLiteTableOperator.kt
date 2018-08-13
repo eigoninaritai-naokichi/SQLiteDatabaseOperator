@@ -555,7 +555,7 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
         val emptyTableInstance: Any = SQLiteTableOperator.makeInstanceFromCursor(tableClass, null)
 
         // データ取得で使用する条件の準備
-        val columns = if (columnAnnotationProperties != null) SQLiteTableOperator.getColumnNames(emptyTableInstance, null, columnAnnotationProperties) else arrayOf()
+        val columns = if (columnAnnotationProperties != null) getColumnNames<T>(null, columnAnnotationProperties) else arrayOf()
         val (whereClause, whereArgs) = if (whereConditions != null) WhereCondition.makeWhere(emptyTableInstance, null, whereConditions) else Pair(null, arrayOf<String>())
         val groupByClause = groupBy?.makeClause(emptyTableInstance, null)
         val havingClause = having?.makeClause(emptyTableInstance, null)
