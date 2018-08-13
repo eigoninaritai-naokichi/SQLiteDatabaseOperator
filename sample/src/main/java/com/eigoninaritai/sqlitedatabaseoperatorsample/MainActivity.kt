@@ -94,14 +94,6 @@ class MainActivity : AppCompatActivity() {
                     sqliteTableOperator.endTransaction()
                 }
             }
-            try {
-                sqliteTableOperator.beginTransaction()
-                sqliteTableOperator.delete<SampleTable>()
-                sqliteTableOperator.setTransactionSuccessful()
-            }
-            finally {
-                sqliteTableOperator.endTransaction()
-            }
         }
     }
 }
