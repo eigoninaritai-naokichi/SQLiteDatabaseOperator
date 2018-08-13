@@ -361,6 +361,22 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
         }
 
         /**
+         * 指定されたColumnアノテーションが付与されたプロパティに一致するカラムの値を指定されたCursorから取得する。
+         *
+         * @param T Columnアノテーションが付与されたプロパティを含むテーブルクラス。
+         * @param columnAnnotationProperty Cursorから値を取得するColumnアノテーションが付与されたプロパティ。
+         * @param cursor テーブルクラスのColumnアノテーションが付与されたプロパティと一致するカラムの値を持つCursorインスタンス。
+         *
+         * @throws SQLiteColumnNotFoundException 指定されたColumnアノテーションが付与されたプロパティがテーブルクラスに存在しない場合、実行時に発生する。
+         */
+        inline fun <reified T> getParameterValueFromCursor(columnAnnotationProperty: KProperty1<*, *>, cursor: Cursor?): Any? {
+            val tableClass = T::class
+            val sqliteTableDefine = getSQLiteTableDefine(tableClass)
+            val columnDefine = sqliteTableDefine.columnDefines.find { it.columnAnnotationProperty == columnAnnotationProperty } ?: throw IllegalArgumentException("指定されたColumnアノテーションが付与されたプロパティがテーブルクラスに存在しないため、データの取得に失敗しました。")
+            return getParameterValueFromCursor(columnDefine.columnName, columnAnnotationProperty.returnType, cursor)
+        }
+
+        /**
          * 指定されたカラム名に一致するカラムの値を指定されたCursorから取得する。
          *
          * @param columnName Cursorから取得するカラム名。
