@@ -222,12 +222,25 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
         /**
          * 指定されたテーブルクラスと指定されたColumnアノテーションが付与されたプロパティからカラム名を取得する。
          *
+         * @param T 指定されたColumnアノテーションが付与されたプロパティを持つテーブルクラス。
+         * @param columnAnnotationProperty 指定されたColumnアノテーションが付与されたプロパティ。
+         * @return 指定されたテーブルクラスと指定されたColumnアノテーションが付与されたプロパティから取得したカラム名。
+         */
+        inline fun <reified T> getColumnName(columnAnnotationProperty: KProperty1<*, *>): String {
+            val tableClass = T::class
+            val emptyTableInstance: Any = makeInstanceFromCursor(tableClass, null)
+            return getColumnName(emptyTableInstance, columnAnnotationProperty)
+        }
+
+        /**
+         * 指定されたテーブルクラスと指定されたColumnアノテーションが付与されたプロパティからカラム名を取得する。
+         *
          * @param table 指定されたColumnアノテーションが付与されたプロパティを持つテーブルクラス。
          * @param columnAnnotationProperty 指定されたColumnアノテーションが付与されたプロパティ。
          * @return 指定されたテーブルクラスと指定されたColumnアノテーションが付与されたプロパティから取得したカラム名。
          * @throws SQLiteColumnNotFoundException 指定されたテーブルクラスに指定されたColumnアノテーションが付与されたプロパティが存在しない場合、実行時に発生する。
          */
-        fun getColumnName(table: Any, columnAnnotationProperty: KProperty1<*, *>): String = getSQLiteTableDefine(table::class).columnDefines.find { it.columnAnnotationProperty == columnAnnotationProperty }?.columnName ?: throw SQLiteColumnNotFoundException("指定されたテーブルクラスに指定されたColumnアノテーションが付与されたプロパティが存在しません。\nテーブルクラス:${getSQLiteTableDefine(table::class).tableName}")
+        @PublishedApi internal fun getColumnName(table: Any, columnAnnotationProperty: KProperty1<*, *>): String = getSQLiteTableDefine(table::class).columnDefines.find { it.columnAnnotationProperty == columnAnnotationProperty }?.columnName ?: throw SQLiteColumnNotFoundException("指定されたテーブルクラスに指定されたColumnアノテーションが付与されたプロパティが存在しません。\nテーブルクラス:${getSQLiteTableDefine(table::class).tableName}")
 
         /**
          * 指定されたテーブルクラスと指定されたColumnアノテーションが付与されたプロパティからそのプロパティの値を取得する。
@@ -266,18 +279,33 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
         }
 
         /**
-         * 指定されたテーブルクラスとColumnアノテーションが付与されたプロパティのリストからカラム名を連結した文字列を取得する。
+         * 指定されたテーブルクラスとColumnアノテーションが付与されたプロパティから取得したカラム名のリストを取得する。
+         *
+         * @param T 指定されたColumnアノテーションが付与されたプロパティを持つテーブルクラス。
+         * @param tableAlias カラム名に使用するテーブルエイリアス名。
+         * nullだった場合、エイリアスは使用しない。
+         * @param columnAnnotationProperties 指定されたColumnアノテーションが付与されたプロパティのリスト。
+         * @return 指定されたテーブルクラスと指定されたColumnアノテーションが付与されたプロパティから取得したカラム名のリスト。
+         */
+        inline fun <reified T> getColumnNames(tableAlias: String?, columnAnnotationProperties: List<KProperty1<*, *>>): Array<String> {
+            val tableClass = T::class
+            val emptyTableInstance: Any = makeInstanceFromCursor(tableClass, null)
+            return getColumnNames(emptyTableInstance, tableAlias, columnAnnotationProperties)
+        }
+
+        /**
+         * 指定されたテーブルクラスとColumnアノテーションが付与されたプロパティから取得したカラム名のリストを取得する。
          *
          * @param table 指定されたColumnアノテーションが付与されたプロパティを持つテーブルクラス。
          * @param tableAlias カラム名に使用するテーブルエイリアス名。
          * nullだった場合、エイリアスは使用しない。
          * @param columnAnnotationProperties 指定されたColumnアノテーションが付与されたプロパティのリスト。
-         * @return 指定されたテーブルクラスと指定されたColumnアノテーションが付与されたプロパティのリストから取得したカラム名を連結した文字列。
+         * @return 指定されたテーブルクラスと指定されたColumnアノテーションが付与されたプロパティから取得したカラム名のリスト。
          */
-        fun getColumnNames(table: Any, tableAlias: String?, columnAnnotationProperties: List<KProperty1<*, *>>): Array<String >{
+        @PublishedApi internal fun getColumnNames(table: Any, tableAlias: String?, columnAnnotationProperties: List<KProperty1<*, *>>): Array<String> {
             val columns = mutableListOf<String>()
             columnAnnotationProperties.forEach { columnAnnotationProperty ->
-                columns.add(addTableAlias(tableAlias, SQLiteTableOperator.getColumnName(table, columnAnnotationProperty)))
+                columns.add(addTableAlias(tableAlias, getColumnName(table, columnAnnotationProperty)))
             }
             return columns.toTypedArray()
         }
