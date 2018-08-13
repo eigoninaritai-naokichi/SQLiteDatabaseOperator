@@ -573,6 +573,22 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
         return selectList.toList()
     }
 
+    /**
+     * 指定された条件で指定されたテーブルに含まれるデータをCursorで返す。
+     *
+     * @param T SQLiteのテーブルから取得したいテーブルクラス。
+     * @param select SELECT句を表す。
+     * @param whereConditions データ取得に使用する条件。
+     * nullの場合、条件を指定しない。
+     * @param groupBy GROUP BYを表す。
+     * nullの場合、GROUP BYを指定しない。
+     * @param having HAVINGを表す。
+     * nullの場合、HAVINGを指定しない。
+     * @param orderBy ORDER BYを表す。
+     * nullの場合、ORDER BYを指定しない。
+     * @param otherStatement 他の引数で表すことのできない命令文を表す。
+     * @return 指定された条件で指定されたテーブルから取得したデータを含むCursor。
+     */
     inline fun <reified T> selectData(select: Select, whereConditions: List<WhereCondition>? = null, groupBy: GroupBy? = null, having: Having? = null, orderBy: OrderBy? = null, otherStatement: String? = null): Cursor {
         val tableClass = T::class
         val emptyTableInstance: Any = SQLiteTableOperator.makeInstanceFromCursor(tableClass, null)
