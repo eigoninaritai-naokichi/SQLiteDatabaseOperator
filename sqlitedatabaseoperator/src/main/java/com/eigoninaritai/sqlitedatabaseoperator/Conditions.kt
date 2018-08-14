@@ -13,7 +13,6 @@ import kotlin.reflect.KProperty1
  * nullの場合、HAVINGを指定しない。
  * @property orderBy ORDER BYを表す。
  * nullの場合、ORDER BYを指定しない。
- * @property distinct DISTINCTを行うかどうかを表す。
  * @property limit 取得するデータの上限を表す。
  */
 abstract class ConditionsBase(
@@ -21,7 +20,6 @@ abstract class ConditionsBase(
     val groupBy: GroupBy? = null,
     val having: Having? = null,
     val orderBy: OrderBy? = null,
-    val distinct: Boolean = false,
     val limit: Int? = null
 )
 
@@ -40,7 +38,7 @@ abstract class ConditionsBase(
  * nullの場合、ORDER BYを指定しない。
  * @property columnAnnotationProperties 取得したいカラムのリスト。
  * nullの場合、全てのカラムを取得する。
- * @param distinct DISTINCTを行うかどうかを表す。
+ * @property distinct DISTINCTを行うかどうかを表す。
  * @param limit 取得するデータの上限を表す。
  */
 class Conditions(
@@ -49,6 +47,32 @@ class Conditions(
     having: Having? = null,
     orderBy: OrderBy? = null,
     val columnAnnotationProperties: List<KProperty1<*, *>>? = null,
-    distinct: Boolean = false,
+    val distinct: Boolean = false,
     limit: Int? = null
-) : ConditionsBase(whereConditions, groupBy, having, orderBy, distinct, limit)
+) : ConditionsBase(whereConditions, groupBy, having, orderBy, limit)
+
+/**
+ * Cursorでデータ取得をするための条件を表す。
+ *
+ * SQLiteTableOperator.selectDataのデータ取得の条件として使用する。
+ *
+ * @property select SELECT句を表す。
+ * @param whereConditions データ取得に使用する条件。
+ * nullの場合、条件を指定しない。
+ * @param groupBy GROUP BYを表す。
+ * nullの場合、GROUP BYを指定しない。
+ * @param having HAVINGを表す。
+ * nullの場合、HAVINGを指定しない。
+ * @param orderBy ORDER BYを表す。
+ * nullの場合、ORDER BYを指定しない。
+ * nullの場合、全てのカラムを取得する。
+ * @param limit 取得するデータの上限を表す。
+ */
+class ConditionsToCursor(
+    val select: Select,
+    whereConditions: List<WhereCondition>? = null,
+    groupBy: GroupBy? = null,
+    having: Having? = null,
+    orderBy: OrderBy? = null,
+    limit: Int? = null
+) : ConditionsBase(whereConditions, groupBy, having, orderBy, limit)

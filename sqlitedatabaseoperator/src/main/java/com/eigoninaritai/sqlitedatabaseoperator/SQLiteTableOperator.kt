@@ -575,27 +575,18 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
      * 指定された条件で指定されたテーブルに含まれるデータをCursorで返す。
      *
      * @param T SQLiteのテーブルから取得したいテーブルクラス。
-     * @param select SELECT句を表す。
-     * @param whereConditions データ取得に使用する条件。
-     * nullの場合、条件を指定しない。
-     * @param groupBy GROUP BYを表す。
-     * nullの場合、GROUP BYを指定しない。
-     * @param having HAVINGを表す。
-     * nullの場合、HAVINGを指定しない。
-     * @param orderBy ORDER BYを表す。
-     * nullの場合、ORDER BYを指定しない。
-     * @param otherStatement 他の引数で表すことのできない命令文を表す。
+     * @param conditions SELECT句とデータ取得に使用する条件。
      * @return 指定された条件で指定されたテーブルから取得したデータを含むCursor。
      */
-    inline fun <reified T : Any> selectData(select: Select, whereConditions: List<WhereCondition>? = null, groupBy: GroupBy? = null, having: Having? = null, orderBy: OrderBy? = null, otherStatement: String? = null): Cursor {
+    inline fun <reified T : Any> selectData(conditions: ConditionsToCursor): Cursor {
         val emptyTableInstance = makeInstanceFromCursor<T>(null)
 
         // SELECT句作成の準備
-        val selectClause = select.makeClause(emptyTableInstance, null, true)
-        val (whereClause, whereArgs) = if (whereConditions != null) WhereCondition.makeWhere(emptyTableInstance, null, whereConditions) else Pair(null, arrayOf<String>())
-        val groupByClause = groupBy?.makeClause(emptyTableInstance, null)
-        val havingClause = having?.makeClause(emptyTableInstance, null)
-        val orderByClause = orderBy?.makeClause(emptyTableInstance, null)
+        val selectClause = conditions.select.makeClause(emptyTableInstance, null, true)
+        val (whereClause, whereArgs) = if (conditions.whereConditions != null) WhereCondition.makeWhere(emptyTableInstance, null, conditions.whereConditions) else Pair(null, arrayOf<String>())
+        val groupByClause = conditions.groupBy?.makeClause(emptyTableInstance, null)
+        val havingClause = conditions.having?.makeClause(emptyTableInstance, null)
+        val orderByClause = conditions.orderBy?.makeClause(emptyTableInstance, null)
 
         // SELECT句の作成
         var selectStatement = "$selectClause\n"
@@ -603,7 +594,7 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
         if (!groupByClause.isNullOrEmpty()) selectStatement += "$groupByClause\n"
         if (!havingClause.isNullOrEmpty()) selectStatement += "$havingClause\n"
         if (!orderByClause.isNullOrEmpty()) selectStatement += "$orderByClause\n"
-        if (!otherStatement.isNullOrEmpty()) selectStatement += "$otherStatement\n"
+        if (conditions.limit != null) selectStatement += "LIMIT ${conditions.limit}\n"
 
         // データを取得し、取得したデータを返す
         return readableDatabase.rawQuery(selectStatement, whereArgs)

@@ -48,10 +48,11 @@ abstract class Clause(private val clauseName: String) {
  * SelectColumnBaseを継承したクラスを使用し、SELECT句で取得するカラムを指定する。
  *
  * @property selectColumns 句で取得するカラムを表す。
+ * @property shouldUseDistinct DISTINCTを行うかどうかを表す。
  */
-class Select(private val selectColumns: List<SelectColumnBase>) : Clause("SELECT") {
+class Select(private val selectColumns: List<SelectColumnBase>, private val shouldUseDistinct: Boolean = false) : Clause("SELECT") {
     override fun makeClause(table: Any, tableAlias: String?): String {
-        var clause = "\n"
+        var clause = if (shouldUseDistinct) "DISTINCT\n" else "\n"
         selectColumns.forEachIndexed { i, selectColumn ->
             if (i > 0) clause += ",\n"
             clause += selectColumn.makeColumnPhrase(table, tableAlias)

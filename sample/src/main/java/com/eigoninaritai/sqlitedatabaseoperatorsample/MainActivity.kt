@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
                 SelectColumnWithString("*")
             ))
             val whereConditions = listOf(NotEqualWithValue(SampleTable::limitedLengthString, "Foreign String"))
-            sqliteTableOperator.selectData<SampleTable>(select, whereConditions).use { cursor ->
+            sqliteTableOperator.selectData<SampleTable>(ConditionsToCursor(select, whereConditions)).use { cursor ->
                 if (cursor.moveToFirst()){
                     Log.println(Log.INFO, "Show inserted data2.", "${SQLiteTableOperator.getColumnName<SampleTable>(SampleTable::nullableInt)}:${SQLiteTableOperator.getParameterValueFromCursor<SampleTable>(SampleTable::nullableInt, cursor)}")
                     do {
