@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             // インサートしたデータを取得し、データを表示する
-            var sampleTableList = sqliteTableOperator.selectDataList<SampleTable>(listOf(EqualWithValue(SampleTable::nullableInt, 2)))
+            var sampleTableList = sqliteTableOperator.selectDataList<SampleTable>(Conditions(listOf(EqualWithValue(SampleTable::nullableInt, 2))))
             sampleTableList.forEach { Log.println(Log.INFO, "Show inserted data.", it.toString()) }
 
             // インサートしたデータをCursorで取得し、データを表示する
@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             // 更新したデータを取得し、データを表示する
-            sampleTableList = sqliteTableOperator.selectDataList(listOf(EqualWithValue(SampleTable::nullableInt, 100)))
+            sampleTableList = sqliteTableOperator.selectDataList(Conditions(listOf(EqualWithValue(SampleTable::nullableInt, 100))))
             sampleTableList.forEach { Log.println(Log.INFO, "Show updated data.", it.toString()) }
 
             // 全てのデータを表示する
