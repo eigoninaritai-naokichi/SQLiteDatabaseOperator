@@ -521,7 +521,7 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
      * 渡されたテーブルクラスの1つ以上のプロパティにColumnアノテーションが付与されていない場合、実行時に発生する。
      */
     fun delete(table: Any, whereConditions: List<WhereCondition>?): Int {
-        val (whereClause, whereArgs) = if (whereConditions != null) WhereCondition.makeWhere(table as Any, null, whereConditions) else Pair(null, null)
+        val (whereClause, whereArgs) = if (whereConditions != null) WhereCondition.makeWhere(table, null, whereConditions) else Pair(null, null)
         val sqliteTableDefine = SQLiteTableOperator.getSQLiteTableDefine(table::class)
         return writableDatabase.delete(sqliteTableDefine.tableName, whereClause, whereArgs)
     }
