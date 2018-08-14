@@ -45,7 +45,9 @@ abstract class Clause(private val clauseName: String) {
 /**
  * SELECT句を表す。
  *
- * @property selectColumns 句で使用するカラム。
+ * SelectColumnBaseを継承したクラスを使用し、SELECT句で取得するカラムを指定する。
+ *
+ * @property selectColumns 句で取得するカラムを表す。
  */
 class Select(private val selectColumns: List<SelectColumnBase>) : Clause("SELECT") {
     override fun makeClause(table: Any, tableAlias: String?): String {
