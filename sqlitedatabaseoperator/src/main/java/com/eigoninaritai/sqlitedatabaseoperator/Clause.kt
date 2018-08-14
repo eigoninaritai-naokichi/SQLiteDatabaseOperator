@@ -54,7 +54,7 @@ class Select(private val selectColumns: List<SelectColumnBase>) : Clause("SELECT
         var clause = "\n"
         selectColumns.forEachIndexed { i, selectColumn ->
             if (i > 0) clause += ",\n"
-            clause += "${selectColumn.makeColumnPhrase(table, tableAlias)}"
+            clause += selectColumn.makeColumnPhrase(table, tableAlias)
         }
         val sqliteTableDefine = SQLiteTableOperator.getSQLiteTableDefine(table::class)
         return "${clause}\nFROM ${sqliteTableDefine.tableName}"
