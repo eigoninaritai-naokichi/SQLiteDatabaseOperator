@@ -226,9 +226,8 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
          * @param columnAnnotationProperty 指定されたColumnアノテーションが付与されたプロパティ。
          * @return 指定されたテーブルクラスと指定されたColumnアノテーションが付与されたプロパティから取得したカラム名。
          */
-        inline fun <reified T> getColumnName(columnAnnotationProperty: KProperty1<*, *>): String {
-            val tableClass = T::class
-            val emptyTableInstance: Any = makeInstanceFromCursor(tableClass, null)
+        inline fun <reified T : Any> getColumnName(columnAnnotationProperty: KProperty1<*, *>): String {
+            val emptyTableInstance = makeInstanceFromCursor<T>(null)
             return getColumnName(emptyTableInstance, columnAnnotationProperty)
         }
 
@@ -287,9 +286,8 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
          * @param columnAnnotationProperties 指定されたColumnアノテーションが付与されたプロパティのリスト。
          * @return 指定されたテーブルクラスと指定されたColumnアノテーションが付与されたプロパティから取得したカラム名のリスト。
          */
-        inline fun <reified T> getColumnNames(tableAlias: String?, columnAnnotationProperties: List<KProperty1<*, *>>): Array<String> {
-            val tableClass = T::class
-            val emptyTableInstance: Any = makeInstanceFromCursor(tableClass, null)
+        inline fun <reified T : Any> getColumnNames(tableAlias: String?, columnAnnotationProperties: List<KProperty1<*, *>>): Array<String> {
+            val emptyTableInstance = makeInstanceFromCursor<T>(null)
             return getColumnNames(emptyTableInstance, tableAlias, columnAnnotationProperties)
         }
 
@@ -314,15 +312,15 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
          * 指定されたテーブルクラスとCursorのインスタンスから指定されたテーブルクラスのインスタンスを作成する。
          *
          * @param T インスタンスを作成するテーブルクラスを表す。
-         * @param tableClass インスタンスを作成するテーブルクラス。
          * @param cursor テーブルクラスのColumnアノテーションが付与されたプロパティと一致するカラムの値を持つCursorインスタンス。
          * このCursorのインスタンスを使用し、テーブルクラス内のColumnアノテーションが付与されたプロパティに値を設定する。
          * nullが指定されている場合、指定されたテーブルクラスの空のインスタンスを作成する。
          * @return 指定されたテーブルクラスとCursorのインスタンスから作成した指定されたテーブルクラスのインスタンス。
          * cursorのインスタンスがnullの場合、指定されたテーブルクラスの空のインスタンスを作成する。
          */
-        @PublishedApi internal inline fun <reified T> makeInstanceFromCursor(tableClass: KClass<*>, cursor: Cursor? = null): T {
+        @PublishedApi internal inline fun <reified T : Any> makeInstanceFromCursor(cursor: Cursor? = null): T {
             // コンストラクタに渡すパラメータと値を取得
+            val tableClass = T::class
             val sqliteTableDefine = getSQLiteTableDefine(tableClass)
             val constructor = tableClass.constructors.first()
             val constructorArgs = mutableMapOf<KParameter, Any?>()
@@ -349,14 +347,10 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
 
             // インスタンスを作成し、カラム定義と一致するミュータブルなプロパティに値を設定
             val madeInstance = constructor.callBy(constructorArgs)
-            if (madeInstance is T)
-            {
-                sqliteTableDefine.columnDefines.forEach { targetColumnDefine ->
-                    val targetMutableProperty = tableClass.memberProperties.filterIsInstance<KMutableProperty1<T, Any?>>().find { it == targetColumnDefine.columnAnnotationProperty }
-                    targetMutableProperty?.set(madeInstance, getParameterValueFromCursor(targetColumnDefine.columnName, targetColumnDefine.columnAnnotationProperty.returnType, cursor))
-                }
+            sqliteTableDefine.columnDefines.forEach { targetColumnDefine ->
+                val targetMutableProperty = tableClass.memberProperties.filterIsInstance<KMutableProperty1<T, Any?>>().find { it == targetColumnDefine.columnAnnotationProperty }
+                targetMutableProperty?.set(madeInstance, getParameterValueFromCursor(targetColumnDefine.columnName, targetColumnDefine.columnAnnotationProperty.returnType, cursor))
             }
-            else throw IllegalStateException("テーブルクラスのインスタンス作成に失敗しました。")
             return madeInstance
         }
 
@@ -566,9 +560,8 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
      * nullの場合、上限を指定しない。
      * @return 指定された条件でSQLiteのテーブルから取得したテーブルクラスのリスト。
      */
-    inline fun <reified T> selectDataList(whereConditions: List<WhereCondition>? = null, groupBy: GroupBy? = null, having: Having? = null, orderBy: OrderBy? = null, columnAnnotationProperties: List<KProperty1<*, *>>? = null, distinct: Boolean = false, limit: Int? = null): List<T> {
-        val tableClass = T::class
-        val emptyTableInstance: Any = SQLiteTableOperator.makeInstanceFromCursor(tableClass, null)
+    inline fun <reified T : Any> selectDataList(whereConditions: List<WhereCondition>? = null, groupBy: GroupBy? = null, having: Having? = null, orderBy: OrderBy? = null, columnAnnotationProperties: List<KProperty1<*, *>>? = null, distinct: Boolean = false, limit: Int? = null): List<T> {
+        val emptyTableInstance = makeInstanceFromCursor<T>(null)
 
         // データ取得で使用する条件の準備
         val columns = if (columnAnnotationProperties != null) getColumnNames<T>(null, columnAnnotationProperties) else arrayOf()
@@ -578,12 +571,12 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
         val orderByClause = orderBy?.makeClause(emptyTableInstance, null)
 
         // データを取得し、取得したデータでテーブルクラスのインスタンスを作成し、リストにする
-        val sqliteTableDefine = SQLiteTableOperator.getSQLiteTableDefine(tableClass)
+        val sqliteTableDefine = getSQLiteTableDefine(T::class)
         val selectList: MutableList<T> = mutableListOf()
         readableDatabase.query(distinct, sqliteTableDefine.tableName, columns, whereClause, whereArgs, groupByClause, havingClause, orderByClause, limit?.toString())!!.use { cursor ->
             if (!cursor.moveToFirst()) return selectList.toList()
             do {
-                selectList.add(SQLiteTableOperator.makeInstanceFromCursor(tableClass, cursor))
+                selectList.add(makeInstanceFromCursor(cursor))
             } while (cursor.moveToNext())
         }
         return selectList.toList()
@@ -605,9 +598,8 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
      * @param otherStatement 他の引数で表すことのできない命令文を表す。
      * @return 指定された条件で指定されたテーブルから取得したデータを含むCursor。
      */
-    inline fun <reified T> selectData(select: Select, whereConditions: List<WhereCondition>? = null, groupBy: GroupBy? = null, having: Having? = null, orderBy: OrderBy? = null, otherStatement: String? = null): Cursor {
-        val tableClass = T::class
-        val emptyTableInstance: Any = SQLiteTableOperator.makeInstanceFromCursor(tableClass, null)
+    inline fun <reified T : Any> selectData(select: Select, whereConditions: List<WhereCondition>? = null, groupBy: GroupBy? = null, having: Having? = null, orderBy: OrderBy? = null, otherStatement: String? = null): Cursor {
+        val emptyTableInstance = makeInstanceFromCursor<T>(null)
 
         // SELECT句作成の準備
         val selectClause = select.makeClause(emptyTableInstance, null, true)
