@@ -545,35 +545,24 @@ class SQLiteTableOperator<out T : SQLiteOpenHelper>(private val sqliteOpenHelper
      * 指定されたテーブルクラスのリストを指定された条件でSQLiteのテーブルから取得する。
      *
      * @param T SQLiteのテーブルから取得したいテーブルクラス。
-     * @param whereConditions データ取得に使用する条件。
+     * @param conditions データ取得に使用する条件。
      * nullの場合、条件を指定しない。
-     * @param groupBy GROUP BYを表す。
-     * nullの場合、GROUP BYを指定しない。
-     * @param having HAVINGを表す。
-     * nullの場合、HAVINGを指定しない。
-     * @param orderBy ORDER BYを表す。
-     * nullの場合、ORDER BYを指定しない。
-     * @param columnAnnotationProperties 取得したいカラムのリスト。
-     * nullの場合、全てのカラムを取得する。
-     * @param distinct DISTINCTを行うかどうかを表す。
-     * @param limit 取得するデータの上限を表す。
-     * nullの場合、上限を指定しない。
      * @return 指定された条件でSQLiteのテーブルから取得したテーブルクラスのリスト。
      */
-    inline fun <reified T : Any> selectDataList(whereConditions: List<WhereCondition>? = null, groupBy: GroupBy? = null, having: Having? = null, orderBy: OrderBy? = null, columnAnnotationProperties: List<KProperty1<*, *>>? = null, distinct: Boolean = false, limit: Int? = null): List<T> {
+    inline fun <reified T : Any> selectDataList(conditions: Conditions? = null): List<T> {
         val emptyTableInstance = makeInstanceFromCursor<T>(null)
 
         // データ取得で使用する条件の準備
-        val columns = if (columnAnnotationProperties != null) getColumnNames<T>(null, columnAnnotationProperties) else arrayOf()
-        val (whereClause, whereArgs) = if (whereConditions != null) WhereCondition.makeWhere(emptyTableInstance, null, whereConditions) else Pair(null, arrayOf<String>())
-        val groupByClause = groupBy?.makeClause(emptyTableInstance, null)
-        val havingClause = having?.makeClause(emptyTableInstance, null)
-        val orderByClause = orderBy?.makeClause(emptyTableInstance, null)
+        val columns = if (conditions?.columnAnnotationProperties != null) getColumnNames<T>(null, conditions.columnAnnotationProperties) else arrayOf()
+        val (whereClause, whereArgs) = if (conditions?.whereConditions != null) WhereCondition.makeWhere(emptyTableInstance, null, conditions.whereConditions) else Pair(null, arrayOf<String>())
+        val groupByClause = conditions?.groupBy?.makeClause(emptyTableInstance, null)
+        val havingClause = conditions?.having?.makeClause(emptyTableInstance, null)
+        val orderByClause = conditions?.orderBy?.makeClause(emptyTableInstance, null)
 
         // データを取得し、取得したデータでテーブルクラスのインスタンスを作成し、リストにする
         val sqliteTableDefine = getSQLiteTableDefine(T::class)
         val selectList: MutableList<T> = mutableListOf()
-        readableDatabase.query(distinct, sqliteTableDefine.tableName, columns, whereClause, whereArgs, groupByClause, havingClause, orderByClause, limit?.toString())!!.use { cursor ->
+        readableDatabase.query(conditions?.distinct ?: false, sqliteTableDefine.tableName, columns, whereClause, whereArgs, groupByClause, havingClause, orderByClause, conditions?.limit?.toString())!!.use { cursor ->
             if (!cursor.moveToFirst()) return selectList.toList()
             do {
                 selectList.add(makeInstanceFromCursor(cursor))
