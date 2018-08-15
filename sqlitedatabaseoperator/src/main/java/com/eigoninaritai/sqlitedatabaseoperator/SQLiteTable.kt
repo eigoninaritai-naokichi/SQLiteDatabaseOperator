@@ -1,7 +1,6 @@
 package com.eigoninaritai.sqlitedatabaseoperator
 
 import java.util.*
-import java.util.regex.Pattern
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
@@ -448,7 +447,7 @@ internal object SQLiteAnnotationOperator {
      * @param name 確認したいテーブル名、もしくはカラム名。
      * @return true:指定された名前がSQLiteの命名規則に従っている場合。false:それ以外。
      */
-    private fun checkName(name: String): Boolean = Pattern.matches("^[_a-zA-Z]\\w*?$", name)
+    private fun checkName(name: String): Boolean = Regex("^[_a-zA-Z]\\w*?$").matches(name)
 
     /**
      * 指定されたカラムが指定されたテーブルクラスに存在するかどうかを確認する。
